@@ -11,6 +11,7 @@ import {
   fitState,
   JevClient,
   parseJevResponse,
+  questionsFor,
   reductionRatio,
   resolveOptions,
   type HistoryToolCall,
@@ -313,6 +314,47 @@ describe('decisions', () => {
     expect(shortKept[3]).toBe(shortMessages[5]);
   });
 
+  it('drops a sample that will not fit rather than failing the compaction', () => {
+    const messages = transcript();
+    const calls = collectToolCalls(messages, 0);
+    const peeks = new Map([[calls[0]!.id, 'P'.repeat(4000)]]);
+
+    const batches = batchCalls([calls[0]!], 0, { maxRequestTokens: 400 }, peeks);
+
+    expect(batches).toHaveLength(1);
+    expect(peeks.has(calls[0]!.id)).toBe(false);
+  });
+
+  it('still fails when even the bare question will not fit', () => {
+    const messages = transcript();
+    const calls = collectToolCalls(messages, 0);
+
+    expect(() => batchCalls([calls[0]!], 0, { maxRequestTokens: 5 }, new Map())).toThrow(
+      /no room for questions/,
+    );
+  });
+
+  it('puts a sample of the result into the question that judges it', () => {
+    const messages = transcript();
+    const calls = collectToolCalls(messages, 0);
+
+    const questions = questionsFor(calls[0]!, 'DISTINCTIVE-SAMPLE');
+
+    expect(JSON.stringify(questions[`result_${calls[0]!.id}`])).toContain(
+      'DISTINCTIVE-SAMPLE',
+    );
+  });
+
+  it('asks about a result with no sample without breaking', () => {
+    const messages = transcript();
+    const calls = collectToolCalls(messages, 0);
+
+    expect(Object.keys(questionsFor(calls[0]!))).toEqual([
+      `call_${calls[0]!.id}`,
+      `result_${calls[0]!.id}`,
+    ]);
+  });
+
   it('salvages identifiers a dropped result would otherwise have taken with it', () => {
     const messages = transcript();
     messages[2]!.toolResults![0]!.text = `${'filler line\n'.repeat(200)}src/buried/Thing.tsx\n`;
@@ -348,6 +390,29 @@ describe('decisions', () => {
 });
 
 describe('compact', () => {
+  it('samples the real result text into the questions it sends', async () => {
+    const messages = transcript();
+    messages[2]!.toolResults![0]!.text = `${'filler\n'.repeat(200)}DISTINCTIVE-TAIL`;
+    const sent: JevQuestions[] = [];
+    const recorder: JevAsker = {
+      async ask(_state, questions: JevQuestions) {
+        sent.push(questions);
+        return {
+          answers: Object.fromEntries(
+            Object.keys(questions).map((key) => [
+              key,
+              { type: 'noul' as const, noul: 0.9 },
+            ]),
+          ),
+        };
+      },
+    };
+
+    await compact(messages, recorder, { preserveRecentMessages: 0 });
+
+    expect(JSON.stringify(sent)).toContain('DISTINCTIVE-TAIL');
+  });
+
   it('resends the full state with every batch and merges the answers', async () => {
     const seen: Seen[] = [];
     const messages = transcript();

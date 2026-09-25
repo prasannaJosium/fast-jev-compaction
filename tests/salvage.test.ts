@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import {
+  resultPeek,
   salvageErrorLines,
   salvageIdentifiers,
   salvagedResultText,
@@ -109,6 +110,41 @@ describe('salvageErrorLines', () => {
 });
 
 const OPTIONS = { headChars: 150, maxChars: 600 };
+
+const PEEK = { headChars: 40, tailChars: 20 };
+
+describe('resultPeek', () => {
+  test('returns a short result whole', () => {
+    expect(resultPeek('ok: 3 files changed', false, PEEK)).toBe('ok: 3 files changed');
+  });
+
+  test('keeps the head and the tail of a long result', () => {
+    const text = `HEAD-MARKER${'x'.repeat(500)}TAIL-MARKER`;
+
+    const peek = resultPeek(text, false, PEEK);
+
+    expect(peek).toContain('HEAD-MARKER');
+    expect(peek).toContain('TAIL-MARKER');
+  });
+
+  test('stays within the sampling budget', () => {
+    const text = 'y'.repeat(5000);
+
+    expect(resultPeek(text, false, PEEK).length).toBeLessThan(200);
+  });
+
+  test('favours the tail of a failed result, where the failure is reported', () => {
+    const text = `${'z'.repeat(500)}Error: the real reason`;
+
+    expect(resultPeek(text, true, PEEK)).toContain('Error: the real reason');
+  });
+
+  test('never sends an assigned secret to the model', () => {
+    const text = `API_KEY=supersecretvalue${'q'.repeat(500)}`;
+
+    expect(resultPeek(text, false, PEEK)).not.toContain('supersecretvalue');
+  });
+});
 
 describe('salvagedResultText', () => {
   test('leaves a short result exactly as it was', () => {

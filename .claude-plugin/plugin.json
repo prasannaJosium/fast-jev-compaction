@@ -58,6 +58,18 @@
       "description": "Ceiling on the file paths, URLs, identifiers and error lines recovered from the rest of a dropped tool result; 0 keeps the head only.",
       "default": 600
     },
+    "peekHeadChars": {
+      "type": "number",
+      "title": "Result sample head",
+      "description": "Characters from the start of a tool result shown to Jev when it judges whether that result is worth keeping; 0 asks without a sample.",
+      "default": 200
+    },
+    "peekTailChars": {
+      "type": "number",
+      "title": "Result sample tail",
+      "description": "Characters from the end of a tool result shown to Jev; weighted higher for failed calls, where the reason is printed last.",
+      "default": 100
+    },
     "model": {
       "type": "string",
       "title": "Jev model",

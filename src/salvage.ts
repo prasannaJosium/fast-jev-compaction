@@ -74,6 +74,41 @@ export function salvageErrorLines(text: string): string[] {
   return [...seen];
 }
 
+export interface PeekOptions {
+  /** Characters sampled from the start of the result. */
+  headChars: number;
+  /** Characters sampled from the end of the result. */
+  tailChars: number;
+}
+
+/**
+ * A bounded sample of a tool result, for the question that asks whether the
+ * result is worth keeping verbatim. Without it that question is answered from
+ * the tool name and a byte count alone.
+ *
+ * A failed result is sampled tail-first: the reason a thing failed is printed
+ * last, while the head is the command echo.
+ *
+ * The sample is redacted, and that matters more here than anywhere else in
+ * this file: it is the only place where the content of a tool result leaves
+ * the machine for the model's API. Everything else sent as state is a stub.
+ */
+export function resultPeek(
+  text: string,
+  isError: boolean,
+  options: PeekOptions,
+): string {
+  const head = isError ? Math.floor(options.headChars / 2) : options.headChars;
+  const tail = isError
+    ? options.tailChars + Math.ceil(options.headChars / 2)
+    : options.tailChars;
+  if (text.length <= head + tail + 40) return redact(text);
+  const omitted = text.length - head - tail;
+  return `${redact(text.slice(0, head))}\n[… ${omitted} chars …]\n${redact(
+    text.slice(-tail),
+  )}`;
+}
+
 export interface SalvageOptions {
   /** Characters of the original head kept before the salvaged block. */
   headChars: number;

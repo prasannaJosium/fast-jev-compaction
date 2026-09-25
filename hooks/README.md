@@ -9,7 +9,11 @@ root, so the hook imports it directly) and maps the result back onto session
 messages. User and assistant text is never touched. Jev is sent the whole
 conversation as `state` (tool outputs replaced by a one-line note) and, for
 every tool call outside the pinned first and newest messages, two questions:
-whether the call should stay and whether its full output should stay. An
+whether the call should stay and whether its full output should stay. The
+second question carries a bounded sample of that output (`peekHeadChars` /
+`peekTailChars`, redacted, tail-weighted for failures), so it is answered from
+content rather than from a byte count; the sample rides in the question rather
+than the state, which is shared and re-sent with every batch. An
 item is kept when Jev's probability reaches `keepThreshold`; a dropped result
 is replaced by its first `truncateHeadChars` characters, a one-line note, and
 the paths, URLs, identifiers and error lines salvaged from the rest of it
@@ -57,6 +61,8 @@ The plugin declares these `userConfig` values in
 | `maxRequestTokens` | `30000` |
 | `truncateHeadChars` | `150` |
 | `salvageMaxChars` | `600` |
+| `peekHeadChars` | `200` |
+| `peekTailChars` | `100` |
 | `model` | `jev-latest` |
 
 The TypeSafe key can be supplied as the sensitive `apiKey` plugin option or

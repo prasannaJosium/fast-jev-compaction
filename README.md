@@ -39,7 +39,12 @@ built-in compaction summary with the original messages.
 4. For every non-pinned call Jev gets two `noul` questions: should the **call**
    stay (knowing it was made, with its input, still matters), and should the
    **result** stay verbatim (its contents are still needed and re-running the
-   tool would not do).
+   tool would not do). The second question carries a bounded, redacted sample
+   of the result itself (`peekHeadChars` / `peekTailChars`, tail-weighted for
+   failures), so it is answered from content rather than a byte count. The
+   sample rides in the question, not the state: the state is shared by every
+   question and resent with every batch, so a sample there would be paid once
+   per batch and would crowd out the history.
 5. Questions are split into as many requests as needed so state plus questions
    stays under `maxRequestTokens` (30k by default, under Jev's 32k request
    limit). The same full state is resent with every request; requests run
@@ -113,6 +118,8 @@ put it in a source file.
 | `maxRequestTokens` | `30000` | Estimated ceiling for state plus one batch of questions |
 | `truncateHeadChars` | `150` | Characters from the start of a dropped tool result retained before its note |
 | `salvageMaxChars` | `600` | Ceiling on the identifiers and error lines salvaged from the rest of a dropped result |
+| `peekHeadChars` | `200` | Characters from the start of a result sampled into the question that judges it; 0 asks without a sample |
+| `peekTailChars` | `100` | Characters from the end of a result sampled into that question |
 
 `result.stats` reports message and character counts before and after, the
 per-reason decision counts, the state size in estimated tokens, which fitting

@@ -110,6 +110,14 @@ export interface CompactOptions {
    * dropped result. Default 600; zero keeps the head only.
    */
   salvageMaxChars?: number;
+  /**
+   * Characters sampled from the start of a tool result and shown to Jev in
+   * the question that asks whether the result is worth keeping. Default 200;
+   * zero asks without a sample, as upstream did.
+   */
+  peekHeadChars?: number;
+  /** Characters sampled from the end of a tool result. Default 100. */
+  peekTailChars?: number;
 }
 
 export interface ResolvedCompactOptions {
@@ -120,6 +128,8 @@ export interface ResolvedCompactOptions {
   maxRequestTokens: number;
   truncateHeadChars: number;
   salvageMaxChars: number;
+  peekHeadChars: number;
+  peekTailChars: number;
 }
 
 export interface CompactResult {

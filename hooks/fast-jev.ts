@@ -67,6 +67,8 @@ export function resolveHookConfig(options: PluginOptions): HookConfig {
     'maxRequestTokens',
     'truncateHeadChars',
     'salvageMaxChars',
+    'peekHeadChars',
+    'peekTailChars',
   ] as const) {
     const value = options[key];
     if (typeof value === 'number' && Number.isFinite(value)) numbers[key] = value;
