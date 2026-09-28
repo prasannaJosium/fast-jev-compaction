@@ -154,6 +154,17 @@ independently testable.
 
 ### 3. Peek in the question - `src/compact.ts` (modified)
 
+> **Withdrawn 2026-09-28, kept here for the record.** B1aZer ran this change
+> over 60 OpenHands sessions and could not measure a benefit at any budget
+> (0.19 vs 0.20 at 10% kept, 0.46 vs 0.46 at 25%, 0.67 vs 0.66 at 50%, every
+> confidence interval spanning zero), with ranking AUC falling from 0.68 to
+> 0.63. Their reading is that Jev's scores track the kind of call rather than
+> its content, which matches what we measured independently. One difference
+> worth noting: they placed the sample in the state, where it competes for
+> the state budget, while the design below places it in the question. That
+> changes the cost, not the mechanism they measured, so we are not pursuing
+> it. Section 2 (salvage) is a different mechanism and is unaffected.
+
 Give `questionsFor` access to a bounded head+tail sample of the real result
 text and embed it in the `result_*` question instructions.
 
